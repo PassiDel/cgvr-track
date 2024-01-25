@@ -71,7 +71,7 @@ class Wiimote:
                 for src in mesg[1]:
                     if src:
                         data.append(src['pos'])
-                        print(data)
+                        # print(data)
         self.notify(data)
 
 
