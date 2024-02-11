@@ -1,55 +1,225 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 5;
+let camera, scene, renderer, bulbMat, light;
+let ballMat, cubeMat, floorMat, lightMat;
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+let previousShadowMap = false;
 
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-// const cube = new THREE.Mesh(geometry, material);
-// scene.add(cube);
+const params = {
+    shadows: true,
+    exposure: 0.68,
+};
 
-function createFloor() {
-    // PlaneGeometry für den Boden erstellen
-    let floorGeometry = new THREE.PlaneGeometry(window.innerWidth, 100, 10, 10);
+init();
+animate();
 
-    // MeshBasicMaterial für den Boden erstellen
-    let floorMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff, side: THREE.DoubleSide });
+function init() {
 
-    // Mesh erstellen, indem Sie Geometry und Material kombinieren
-    let floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    const container = document.getElementById('container');
+    const textureLoader = new THREE.TextureLoader();
 
-    // Position des Bodens anpassen, um ihn unter dem Würfel zu platzieren
-    floor.position.y = -2;
+    scene = new THREE.Scene();
+    camera = setCamera();
+    light = setLight(textureLoader);
 
-    // Drehen Sie den Boden, um ihn flach auf den Boden zu legen
-    floor.rotation.x = Math.PI / 2;
+    scene.add(light);
 
-    // Fügen Sie den Boden zur Szene hinzu
-    scene.add(floor);
+    generateCube(textureLoader);
+
+
+    ballMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.5,
+        metalness: 1.0
+    });
+    textureLoader.load('js/img/sky.jpg', function (map) {
+
+        map.anisotropy = 4;
+        map.colorSpace = THREE.SRGBColorSpace;
+        ballMat.map = map;
+        ballMat.needsUpdate = true;
+
+    });
+
+    scene.add(generateFloor(textureLoader));
+    // scene.add(generateSky(textureLoader));
+
+    const ballGeometry = new THREE.SphereGeometry(0.25, 32, 32);
+    const ballMesh = new THREE.Mesh(ballGeometry, ballMat);
+    ballMesh.position.set(1, 0.25, 1);
+    ballMesh.rotation.y = Math.PI;
+    ballMesh.castShadow = true;
+    scene.add(ballMesh);
+
+    const boxGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const boxMesh = new THREE.Mesh(boxGeometry, cubeMat);
+    boxMesh.position.set(- 0.5, 0.25, - 1);
+    boxMesh.castShadow = true;
+    scene.add(boxMesh);
+
+    const boxMesh2 = new THREE.Mesh(boxGeometry, cubeMat);
+    boxMesh2.position.set(0, 0.25, - 5);
+    boxMesh2.castShadow = true;
+    scene.add(boxMesh2);
+
+    const boxMesh3 = new THREE.Mesh(boxGeometry, cubeMat);
+    boxMesh3.position.set(7, 0.25, 0);
+    boxMesh3.castShadow = true;
+    scene.add(boxMesh3);
+
+    const loader = new GLTFLoader()
+    // loading model
+    loader.load('js/img/car/scene.gltf', (gltf) => {
+        const batman = gltf.scene;
+        batman.scale.setScalar(0.005);
+        batman.position.x = 10;
+        scene.add(batman)
+    })
+
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+    setControls();
+    window.addEventListener('resize', onWindowResize);
+
 }
 
-function createPoint() {
-    const pointGeometry = new THREE.BufferGeometry();
-    const materialPoint = new THREE.PointsMaterial({ color: 'red' }); // Änderung zu THREE.PointsMaterial
-    const vertices = new Float32Array([5, 3, 0]); // Die Koordinaten des Punkts
-    pointGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-    // Erstellen Sie das Points-Objekt
-    const point = new THREE.Points(pointGeometry, materialPoint);
-    // Fügen Sie den Punkt zur Szene hinzu
-    scene.add(point);
+function setCamera() {
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.x = - 4;
+    camera.position.z = 4;
+    camera.position.y = 2;
+    return camera;
 }
+
+function setLight(textureLoader) {
+    const bulbGeometry = new THREE.SphereGeometry(1, 16, 8);
+
+    // Erstelle ein Mesh mit der Glühbirnen-Textur
+    bulbMat = new THREE.MeshStandardMaterial({
+        emissive: 0xffffee,
+        emissiveIntensity: 10
+    });
+
+    textureLoader.load('js/img/sky.jpg', function (map) {
+        map.colorSpace = THREE.SRGBColorSpace;
+        bulbMat.map = map;
+        bulbMat.needsUpdate = true;
+    });
+
+    const bulbMesh = new THREE.Mesh(bulbGeometry, bulbMat);
+
+    // Erstelle eine PointLight und füge das Mesh als Child hinzu
+    const bulbLight = new THREE.PointLight(0xffee88, 1, 100, 2);
+    bulbLight.add(bulbMesh);
+
+    // Positioniere die Lichtquelle
+    bulbLight.position.set(5, 5, -5);
+    bulbLight.castShadow = true;
+    bulbLight.power = 18000;
+
+    return bulbLight;
+}
+
+function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function setControls() {
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.minDistance = 1;
+    controls.maxDistance = 20;
+    return controls;
+}
+
+function generateFloor(textureLoader) {
+
+    floorMat = new THREE.MeshStandardMaterial({
+        roughness: 0.8,
+        color: 0xffffff,
+        metalness: 0.2,
+        bumpScale: 1
+    });
+    textureLoader.load('js/img/wiese_2.jpg', function (map) {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set(100, 100);
+        map.colorSpace = THREE.SRGBColorSpace;
+        floorMat.map = map;
+        floorMat.needsUpdate = true;
+
+    });
+    const floorGeometry = new THREE.PlaneGeometry(100, 100);
+    const floorMesh = new THREE.Mesh(floorGeometry, floorMat);
+    floorMesh.receiveShadow = true;
+    floorMesh.rotation.x = - Math.PI / 2.0;
+    return floorMesh;
+}
+
+function generateCube(textureLoader) {
+    cubeMat = new THREE.MeshStandardMaterial({
+        roughness: 0.7,
+        color: 0xffffff,
+        bumpScale: 1,
+        metalness: 0.2
+    });
+
+    textureLoader.load('js/img/sky.jpg', function (map) {
+
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.anisotropy = 4;
+        map.repeat.set(1, 1);
+        map.colorSpace = THREE.SRGBColorSpace;
+        cubeMat.map = map;
+        cubeMat.needsUpdate = true;
+
+    });
+}
+
+function generateSky(textureLoader) {
+    const skyboxTexture = textureLoader.load([
+        'js/img/night.jpg'
+    ]);
+
+    const skyboxMaterial = new THREE.MeshBasicMaterial({
+        map: skyboxTexture,
+        side: THREE.BackSide, // Wichtig, um die Skybox von innen zu sehen
+    });
+
+    const skyboxGeometry = new THREE.BoxGeometry(100, 100, 100);
+    const skyboxMesh = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
+    return skyboxMesh;
+}
+
+//
 
 function animate() {
+
     requestAnimationFrame(animate);
-    // cube.rotation.x += 0.01;
-    // cube.rotation.y += 0.01;
+    render();
+
+}
+
+function render() {
+
+    renderer.toneMappingExposure = Math.pow(params.exposure, 5.0); // to allow for very bright scenes.
+    light.castShadow = params.shadows;
+
+    if (params.shadows !== previousShadowMap) {
+        ballMat.needsUpdate = true;
+        cubeMat.needsUpdate = true;
+        floorMat.needsUpdate = true;
+        previousShadowMap = params.shadows;
+    }
     renderer.render(scene, camera);
 }
-createFloor();
-createPoint();
-animate();
