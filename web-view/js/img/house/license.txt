@@ -1,0 +1,8 @@
+Model Information:
+* title:	House
+* source:	https://sketchfab.com/3d-models/house-5baac3f378394198967081b81680fee2
+* author:	caz747 (https://sketchfab.com/caz747)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works
