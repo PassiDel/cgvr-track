@@ -1,7 +1,7 @@
 import asyncio
 import sys
 import numpy as np
-import cv2
+from datetime import datetime
 
 from Wiimote import Wiimote
 
@@ -31,6 +31,7 @@ async def main():
         wiimote.subscribe(callback)
         output.append([])
 
+    output_file = f"output-{datetime.now().isoformat()}.txt"
     for point in objp:
         print(f"Press enter when {point} is set")
         input()
@@ -44,17 +45,12 @@ async def main():
                 np.mean([d[0] for d in e]),
                 np.mean([d[1] for d in e])
             ))
-        print(output)
-        with open("output.txt", "w") as text_file:
+        with open(output_file, "w") as text_file:
             text_file.write(str(output))
         reset()
-    with open("output.txt", "w") as text_file:
+    with open(output_file, "w") as text_file:
         text_file.write(str(output))
     sys.exit(0)
-    # Calibration for each camera
-    # ret1, mtx1, dist1, rvecs1, tvecs1 = cv2.calibrateCamera(objp[:10], output[0],(1024, 768), gray.shape[::-1], None, None)
-    # ret2, mtx2, dist2, rvecs2, tvecs2 = cv2.calibrateCamera(objp[:10], output[1],(1024, 768), gray.shape[::-1], None, None)
-    # ret3, mtx3, dist3, rvecs3, tvecs3 = cv2.calibrateCamera(objp[:10], output[2],(1024, 768), gray.shape[::-1], None, None)
 
 
 def callback(id: int, data: list[tuple[float, float]]):
