@@ -68,19 +68,26 @@ function init() {
     evtSource.addEventListener('data', e => {
         const [x, y, z] = JSON.parse(e.data)
         if (car && car.position) {
-            car.position.z = z;
-            car.position.y = y;
-            car.position.x = x;
+            car.position.z = z-60;
+            car.position.y = 0;
+            car.position.x = x+10;
+
+
+            // controls.target.z = z-60;
+            // controls.target.y = y+10;
+            // controls.target.x = x+10;
         }
     })
+
+    console.log(controls)
 
 }
 
 function setCamera() {
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.x = -4;
-    camera.position.z = 60;
-    camera.position.y = -2;
+    camera.position.z = 65;
+    camera.position.y = 2;
     return camera;
 }
 

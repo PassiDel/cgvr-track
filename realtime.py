@@ -4,8 +4,10 @@ import numpy as np
 from Wiimote import Wiimote
 from calib import calibrate, triangulate
 from flask import Flask, Response
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 calib_files = [
     ['weiss_raum', 'weiss_raum_2'],
     ['schwarz', 'schwarz_2'],
@@ -54,7 +56,7 @@ def callback(id: int, data: list[tuple[float, float]]):
     if len(data) < 1:
         return
     cache[id].append(data[0])
-    if len(cache[0 if id == 1 else 1]) > 0 and count > 50:
+    if len(cache[0 if id == 1 else 1]) > 0:
         cord = triangulate(P1, P2, np.array(cache[0][-1]).T, np.array(cache[1][-1]).T)
         print(cord)
         messages.append(cord)
