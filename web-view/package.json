@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "dev": "vite"
+  },
   "dependencies": {
     "three": "^0.160.0",
     "three-orbitcontrols": "^2.110.3"

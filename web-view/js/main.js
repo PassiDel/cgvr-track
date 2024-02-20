@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Sky } from 'three/addons/objects/Sky.js';
-import { FontLoader } from 'three/addons/loaders/FontLoader.js';
-import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {Sky} from 'three/addons/objects/Sky.js';
+import {FontLoader} from 'three/addons/loaders/FontLoader.js';
+import {TextGeometry} from 'three/addons/geometries/TextGeometry.js';
 
-let camera, scene, renderer, bulbMat, light;
+let camera, controls,  scene, renderer, bulbMat, light;
 let ballMat, cubeMat, floorMat, drivingMat, car;
 
 let previousShadowMap = false;
@@ -63,13 +63,24 @@ function init() {
     setControls();
     window.addEventListener('resize', onWindowResize);
 
+
+    const evtSource = new EventSource('http://127.0.0.1:5000/stream');
+    evtSource.addEventListener('data', e => {
+        const [x, y, z] = JSON.parse(e.data)
+        if (car && car.position) {
+            car.position.z = z;
+            car.position.y = y;
+            car.position.x = x;
+        }
+    })
+
 }
 
 function setCamera() {
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.x = -4;
-    camera.position.z = 4;
-    camera.position.y = 2;
+    camera.position.z = 60;
+    camera.position.y = -2;
     return camera;
 }
 
@@ -85,7 +96,7 @@ function onWindowResize() {
 }
 
 function setControls() {
-    const controls = new OrbitControls(camera, renderer.domElement);
+    controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 1;
     controls.maxDistance = 20;
     return controls;
@@ -101,7 +112,7 @@ function createText(text, position) {
             height: 0.05,
         });
 
-        var textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        var textMaterial = new THREE.MeshBasicMaterial({color: 0x000000});
         var textMesh = new THREE.Mesh(textGeometry, textMaterial);
         textMesh.position.copy(position);
         scene.add(textMesh);
@@ -112,7 +123,7 @@ function createText(text, position) {
 function createFence() {
     // Erstellen Sie den Zaun
     var fenceGeometry = new THREE.BoxGeometry(0.1, 1, 0.1); // Ändern Sie die Größe entsprechend Ihren Anforderungen
-    var fenceMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    var fenceMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
 
     for (var i = -10; i <= 10; i++) {
         var fence = new THREE.Mesh(fenceGeometry, fenceMaterial);
@@ -160,7 +171,7 @@ function generateFloor(textureLoader) {
     const floorGeometry = new THREE.PlaneGeometry(400, 400);
     const floorMesh = new THREE.Mesh(floorGeometry, floorMat);
     floorMesh.receiveShadow = true;
-    floorMesh.rotation.x = - Math.PI / 2.0;
+    floorMesh.rotation.x = -Math.PI / 2.0;
     return floorMesh;
 }
 
@@ -186,7 +197,7 @@ function generateDrivingArea(textureLoader) {
     floorMesh.position.x = 10;
     floorMesh.position.y = 0.0001;
     floorMesh.receiveShadow = true;
-    floorMesh.rotation.x = - Math.PI / 2.0;
+    floorMesh.rotation.x = -Math.PI / 2.0;
     return floorMesh;
 }
 
@@ -220,6 +231,7 @@ function animate() {
 }
 
 function render() {
+    controls.update()
 
     renderer.toneMappingExposure = Math.pow(params.exposure, 5.0); // to allow for very bright scenes.
     // light.castShadow = params.shadows;
@@ -228,7 +240,5 @@ function render() {
         floorMat.needsUpdate = true;
         previousShadowMap = params.shadows;
     }
-    if (car && car.position)
-        car.position.z -= 0.01;
     renderer.render(scene, camera);
 }

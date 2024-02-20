@@ -3,7 +3,9 @@ import numpy as np
 
 from Wiimote import Wiimote
 from calib import calibrate, triangulate
+from flask import Flask, Response
 
+app = Flask(__name__)
 calib_files = [
     ['weiss_raum', 'weiss_raum_2'],
     ['schwarz', 'schwarz_2'],
@@ -15,6 +17,27 @@ P1, P2 = calibrate(0, 2)
 amount = 2
 cache: list[list[tuple[float, float]]] = []
 count = 0
+
+messages = []
+
+
+@app.route("/stream")
+def stream():
+    def eventStream():
+        last = 0
+        yield "event: ping\n\n"
+        while True:
+            # Poll data from the database
+            # and see if there's a new message
+            if len(messages) > last:
+                last += 1
+                yield """event: data
+data: [{}]
+
+""".format(",".join([str(d) for d in messages[last - 1]]))
+
+    return Response(eventStream(), mimetype="text/event-stream")
+
 
 async def main():
     global cache
@@ -34,6 +57,7 @@ def callback(id: int, data: list[tuple[float, float]]):
     if len(cache[0 if id == 1 else 1]) > 0 and count > 50:
         cord = triangulate(P1, P2, np.array(cache[0][-1]).T, np.array(cache[1][-1]).T)
         print(cord)
+        messages.append(cord)
         cache = [[] for _ in range(amount)]
         count = 0
 
