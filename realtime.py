@@ -17,6 +17,7 @@ p13_1, p13_2, q13 = (0, 0, 0)
 
 amount = 2
 cache: list[list[tuple[float, float]]] = []
+count = 0
 
 
 def calibrate():
@@ -39,14 +40,17 @@ async def main():
 
 
 def callback(id: int, data: list[tuple[float, float]]):
-    global cache
+    global cache, count
+    count += 1
     if len(data) < 1:
         return
     cache[id].append(data[0])
-    if len(cache[0 if id == 1 else 1]) > 0:
+    if len(cache[0 if id == 1 else 1]) > 0 and count > 50:
+        print(np.array(cache[0][0]).T, np.array(cache[1][0]).T)
         print(homogeneous_to_cartesian(
             cv2.triangulatePoints(p13_1, p13_2, np.array(cache[0][0]).T, np.array(cache[1][0]).T)))
         cache = [[] for _ in range(amount)]
+        count = 0
 
 
 if __name__ == '__main__':
