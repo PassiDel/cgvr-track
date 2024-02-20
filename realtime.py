@@ -39,7 +39,7 @@ data: [{}]
     return Response(eventStream(), mimetype="text/event-stream")
 
 
-async def main():
+def main():
     global cache
     wiimotes = [Wiimote(i + 1) for i in range(amount)]
     for wiimote in wiimotes:
@@ -61,11 +61,4 @@ def callback(id: int, data: list[tuple[float, float]]):
         cache = [[] for _ in range(amount)]
         count = 0
 
-
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    try:
-        asyncio.ensure_future(main())
-        loop.run_forever()
-    finally:
-        loop.close()
+main()
