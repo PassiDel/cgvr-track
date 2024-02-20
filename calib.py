@@ -13,6 +13,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from scipy import linalg
 import ast
 from os import listdir
 
@@ -47,14 +48,12 @@ def main():
     # p13_1, p13_2, q13 = stereo_calibrate(2, 1,
     #                                      cam3_matrix, cam3_dist_coeff,
     #                                      cam2_matrix, cam2_dist_coeff)
-    p13_1, p13_2, q13 = stereo_calibrate(0, 2,
-                                         cam1_matrix, cam1_dist_coeff,
-                                         cam3_matrix, cam3_dist_coeff)
-    print(homogeneous_to_cartesian(
-        cv2.triangulatePoints(p12_1, p12_2, np.array(data[1][2]).T, np.array(data[0][2]).T)))
+    p13_1, p13_2 = stereo_calibrate(0, 2,
+                                    cam1_matrix, cam1_dist_coeff,
+                                    cam3_matrix, cam3_dist_coeff)
 
     # print(p12_1, p12_2, q12)
-    print(p13_1, p13_2, q13)
+    print(p13_1, p13_2)
 
     # with open(f'stereo_improved/{stereo_calib_files[0]}', 'r') as f:
     #     data = ast.literal_eval(f.read())
@@ -114,7 +113,7 @@ def stereo_calibrate(idx1: int, idx2: int, cam1_matrix, cam1_dist_coeff,
     :param cam1_dist_coeff: first camera distance coefficients
     :param cam2_matrix: second camera matrix
     :param cam2_dist_coeff: second camera distance coefficients
-    :return: (p1, p2, q)
+    :return: (p1, p2)
     """
 
     cam12_1_img_points, cam12_2_img_points, obj_points12 = getPointsForCameras(idx1, idx2)
@@ -122,11 +121,40 @@ def stereo_calibrate(idx1: int, idx2: int, cam1_matrix, cam1_dist_coeff,
                                                         cam1_matrix, cam1_dist_coeff,
                                                         cam2_matrix, cam2_dist_coeff, imageSize)
 
-    _, _, p1, p2, q, _, _ = cv2.stereoRectify(cam1_matrix, cam1_dist_coeff, cam2_matrix, cam2_dist_coeff,
-                                              imageSize,
-                                              r, t)
     print('stereo error', idx1, idx2, len(obj_points12), error)
-    return p1, p2, q
+    return r, t
+
+
+def triangulate(p1, p2, point1: [float, float], point2: [float, float]):
+    A = [point1[1] * p1[2, :] - p1[1, :],
+         p1[0, :] - point1[0] * p1[2, :],
+         point2[1] * p2[2, :] - p2[1, :],
+         p2[0, :] - point2[0] * p2[2, :]
+         ]
+    A = np.array(A).reshape((4, 4))
+    # print('A: ')
+    # print(A)
+
+    B = A.transpose() @ A
+    U, s, Vh = linalg.svd(B, full_matrices=False)
+    return Vh[3, 0:3] / Vh[3, 3]
+
+
+def calibrate(idx1: int, idx2: int):
+    cam1_dist_coeff, cam1_matrix = calibrate_camera(calib_files[idx1])
+    cam2_dist_coeff, cam2_matrix = calibrate_camera(calib_files[idx2])
+
+    r, t = stereo_calibrate(idx1, idx2,
+                            cam1_matrix, cam1_dist_coeff,
+                            cam2_matrix, cam2_dist_coeff)
+
+    RT1 = np.concatenate([np.eye(3), [[0], [0], [0]]], axis=-1)
+    P1 = cam1_matrix @ RT1
+
+    RT2 = np.concatenate([r, t], axis=-1)
+    P2 = cam2_matrix @ RT2
+
+    return P1, P2
 
 
 def homogeneous_to_cartesian(wp: [[float], [float], [float], [float]]):
