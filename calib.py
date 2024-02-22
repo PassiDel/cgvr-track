@@ -27,12 +27,12 @@ colors = range(len(objp))
 imageSize = (1024, 768)
 
 calib_files = [
-    ['weiss_raum', 'weiss_raum_2'],
-    ['schwarz', 'schwarz_2'],
-    ['weiss_fenster', 'weiss_fenster_2']
+    ['weiss_raum_new', 'weiss_raum_hoeher'],
+    ['schwarz_new', 'schwarz_hoeher'],
+    ['weiss_fenster_new', 'weiss_femster_hoeher']
 ]
 
-stereo_calib_files = listdir('stereo_improved')
+stereo_calib_files = listdir('stereo_2')
 
 
 def main():
@@ -42,7 +42,7 @@ def main():
     # print(p12_1, p12_2, q12)
     # print(p13_1, p13_2)
 
-    with open(f'stereo_improved/{stereo_calib_files[0]}', 'r') as f:
+    with open(f'stereo_2/{stereo_calib_files[0]}', 'r') as f:
         data = ast.literal_eval(f.read())
         for i in range(len(data[0])):
             cord12 = triangulate(P12_1, P12_2, np.array(data[1][i]).T, np.array(data[0][i]).T)
@@ -52,10 +52,10 @@ def main():
 
         coords = np.array(
             [np.array(triangulate(P12_1, P12_2, np.array(data[1][i]).T, np.array(data[0][i]))) for i in
-             range(len(data[0]))]) - np.array([0, 0, 37])
+             range(len(data[0]))])
         coords2 = np.array(
             [np.array(triangulate(P13_1, P13_2, np.array(data[1][i]).T, np.array(data[2][i]))) for i in
-             range(len(data[0]))]) - np.array([0, 0, 37])
+             range(len(data[0]))])
 
         print(coords)
         fig = plt.figure()
@@ -107,13 +107,13 @@ def main():
 def calibrate_camera(files: list[str]):
     """
     Calibrate each camera for its intrinsic and extrinsic parameters
-    :param files: list of file names in ./wii_calib folder
+    :param files: list of file names in ./wii_calib_2 folder
     :return: (cam_dist_coeff, cam_matrix)
     """
     cam_img_points, cam_obj_points = getPointsForCamera(files)
     error, cam_matrix, cam_dist_coeff, _, _ = cv2.calibrateCamera(cam_obj_points, cam_img_points, imageSize,
-                                                                        np.zeros((3, 3), np.float32),
-                                                                        np.zeros(4, np.float32))
+                                                                  np.zeros((3, 3), np.float32),
+                                                                  np.zeros(4, np.float32))
     print('error', error)
     return cam_dist_coeff, cam_matrix
 
@@ -185,7 +185,7 @@ def getPointsForCamera(files: list[str]):
     imgPoint = []
     objPoint = []
     for file in files:
-        with open(f'wii_calib/{file}.txt', 'r') as f:
+        with open(f'wii_calib_2/{file}.txt', 'r') as f:
             data = ast.literal_eval(f.read())
             for j in range(len(data[0])):
                 (x, y) = data[0][j]
@@ -207,7 +207,7 @@ def getPointsForCameras(idx1: int, idx2: int):
     cam2ImgPoints = []
 
     for file in stereo_calib_files:
-        with open(f'stereo_improved/{file}', 'r') as f:
+        with open(f'stereo_2/{file}', 'r') as f:
             data = ast.literal_eval(f.read())
             j = 0
             for d1, d2 in zip(data[idx1], data[idx2]):
@@ -216,7 +216,11 @@ def getPointsForCameras(idx1: int, idx2: int):
                 if x1 > -1 and y1 > -1 and x2 > -1 and y2 > -1:
                     img1Point.append([x1, y1])
                     img2Point.append([x2, y2])
-                    objPoint.append(objp[j])
+
+                    if "high" in file:
+                        objPoint.append(objp[j] + np.array([0, 0, 2]))
+                    else:
+                        objPoint.append(objp[j])
                 j += 1
         print(len(objPoint))
         if len(objPoint) > 0:

@@ -36,6 +36,6 @@ data = [
 ]
 
 for d in data:
-    cord = triangulate(P1, P2, np.array(d[0]).T, np.array(d[1]).T)
+    cord = triangulate(P1, P2, np.array(d[0]).T, np.array(d[1]).T) - np.array([0, 0, 46])
     print(cord)
     messages.append(cord)
