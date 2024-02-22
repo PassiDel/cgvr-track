@@ -52,10 +52,10 @@ def main():
 
         coords = np.array(
             [np.array(triangulate(P12_1, P12_2, np.array(data[1][i]).T, np.array(data[0][i]))) for i in
-             range(len(data[0]))])
+             range(len(data[0]))]) - np.array([0, 0, 37])
         coords2 = np.array(
             [np.array(triangulate(P13_1, P13_2, np.array(data[1][i]).T, np.array(data[2][i]))) for i in
-             range(len(data[0]))])
+             range(len(data[0]))]) - np.array([0, 0, 37])
 
         print(coords)
         fig = plt.figure()
@@ -69,21 +69,23 @@ def main():
         ax.set_xlabel('X axis')
         ax.set_ylabel('Y axis')
         ax.set_zlabel('Z axis')
+        ax.set_zlim(-1, 45)
+
+        fig = plt.figure()
+        gs = fig.add_gridspec(len(data), hspace=0)
+        axs = gs.subplots(sharex=True, sharey=True)
+
+        for i in range(len(axs)):
+            ax = axs[i]
+            ax.set_xlim((0, 1024))
+            ax.set_ylim((0, 768))
+            x, y = np.array(data[i]).T
+            ax.scatter(x, y, c=colors)
+            # ax.plot(x, y)
+            for j in range(len(objp)):
+                ax.text(data[i][j][0], data[i][j][1] + 30, str(objp[j]), horizontalalignment='center')
+
         plt.show()
-    #
-    #     fig = plt.figure()
-    #     gs = fig.add_gridspec(len(data), hspace=0)
-    #     axs = gs.subplots(sharex=True, sharey=True)
-    #
-    #     for i in range(len(axs)):
-    #         ax = axs[i]
-    #         ax.set_xlim((0, 1024))
-    #         ax.set_ylim((0, 768))
-    #         x, y = np.array(data[i]).T
-    #         ax.scatter(x, y, c=colors)
-    #         # ax.plot(x, y)
-    #         for j in range(len(objp)):
-    #             ax.text(data[i][j][0], data[i][j][1] + 30, str(objp[j]), horizontalalignment='center')
     #
     #     # Triangulate 3d world points, based on the two-camera calibration
     #     # This step can run in realtime
