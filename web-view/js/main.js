@@ -32,7 +32,7 @@ function init() {
     light = setLight(textureLoader);
     scene.add(light);
 
-    createFence();
+    // createFence();
 
     scene.add(generateFloor(textureLoader));
     scene.add(generateDrivingArea(textureLoader));
@@ -66,13 +66,13 @@ function init() {
 
     const evtSource = new EventSource('http://127.0.0.1:5000/stream');
     evtSource.addEventListener('data', e => {
-        const [x, y, z] = JSON.parse(e.data)
+        const [x, z, y] = JSON.parse(e.data)
         if (car && car.position) {
-            car.position.z = z-60;
+            car.position.z = z;
             car.position.y = 0;
-            car.position.x = x+10;
+            car.position.x = -x;
 
-
+            console.log(camera.position)
             // controls.target.z = z-60;
             // controls.target.y = y+10;
             // controls.target.x = x+10;
@@ -85,9 +85,9 @@ function init() {
 
 function setCamera() {
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.x = -4;
-    camera.position.z = 65;
-    camera.position.y = 2;
+    camera.position.x = 0;
+    camera.position.z = -10;
+    camera.position.y = 0;
     return camera;
 }
 
