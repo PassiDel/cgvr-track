@@ -36,27 +36,40 @@ stereo_calib_files = listdir('stereo_improved')
 
 
 def main():
-    cam1_dist_coeff, cam1_matrix = calibrate_camera(calib_files[0])
-    # cam2_dist_coeff, cam2_matrix = calibrate_camera(calib_files[1])
-    cam3_dist_coeff, cam3_matrix = calibrate_camera(calib_files[2])
-
-    # Calibrate two cameras to each other
-    # Rectify (?) each two-camera calibration
-    # p12_1, p12_2, q12 = stereo_calibrate(0, 1,
-    #                                      cam1_matrix, cam1_dist_coeff,
-    #                                      cam2_matrix, cam2_dist_coeff)
-    # p13_1, p13_2, q13 = stereo_calibrate(2, 1,
-    #                                      cam3_matrix, cam3_dist_coeff,
-    #                                      cam2_matrix, cam2_dist_coeff)
-    p13_1, p13_2 = stereo_calibrate(0, 2,
-                                    cam1_matrix, cam1_dist_coeff,
-                                    cam3_matrix, cam3_dist_coeff)
+    P12_1, P12_2 = calibrate(1, 0)
+    P13_1, P13_2 = calibrate(1, 2)
 
     # print(p12_1, p12_2, q12)
-    print(p13_1, p13_2)
+    # print(p13_1, p13_2)
 
-    # with open(f'stereo_improved/{stereo_calib_files[0]}', 'r') as f:
-    #     data = ast.literal_eval(f.read())
+    with open(f'stereo_improved/{stereo_calib_files[0]}', 'r') as f:
+        data = ast.literal_eval(f.read())
+        for i in range(len(data[0])):
+            cord12 = triangulate(P12_1, P12_2, np.array(data[1][i]).T, np.array(data[0][i]).T)
+            cord13 = triangulate(P13_1, P13_2, np.array(data[1][i]).T, np.array(data[2][i]).T)
+            dist = np.sqrt(np.sum((np.array(cord13) - np.array(cord12)) ** 2))
+            print(dist, cord12, cord13)
+
+        coords = np.array(
+            [np.array(triangulate(P12_1, P12_2, np.array(data[1][i]).T, np.array(data[0][i]))) for i in
+             range(len(data[0]))])
+        coords2 = np.array(
+            [np.array(triangulate(P13_1, P13_2, np.array(data[1][i]).T, np.array(data[2][i]))) for i in
+             range(len(data[0]))])
+
+        print(coords)
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        points = coords.T
+        ax.scatter3D(points[0], points[1], points[2], color='red')
+        points2 = coords2.T
+        ax.scatter3D(points2[0], points2[1], points2[2], color='blue')
+        for i in range(len(coords)):
+            ax.text(coords[i][0], coords[i][1], coords[i][2], str(i))
+        ax.set_xlabel('X axis')
+        ax.set_ylabel('Y axis')
+        ax.set_zlabel('Z axis')
+        plt.show()
     #
     #     fig = plt.figure()
     #     gs = fig.add_gridspec(len(data), hspace=0)
@@ -97,7 +110,8 @@ def calibrate_camera(files: list[str]):
     """
     cam_img_points, cam_obj_points = getPointsForCamera(files)
     error, cam_matrix, cam_dist_coeff, _, _ = cv2.calibrateCamera(cam_obj_points, cam_img_points, imageSize,
-                                                                  np.zeros((3, 3), np.float32), np.zeros(4, np.float32))
+                                                                        np.zeros((3, 3), np.float32),
+                                                                        np.zeros(4, np.float32))
     print('error', error)
     return cam_dist_coeff, cam_matrix
 
@@ -117,6 +131,7 @@ def stereo_calibrate(idx1: int, idx2: int, cam1_matrix, cam1_dist_coeff,
     """
 
     cam12_1_img_points, cam12_2_img_points, obj_points12 = getPointsForCameras(idx1, idx2)
+
     error, _, _, _, _, r, t, e, f = cv2.stereoCalibrate(obj_points12, cam12_1_img_points, cam12_2_img_points,
                                                         cam1_matrix, cam1_dist_coeff,
                                                         cam2_matrix, cam2_dist_coeff, imageSize)
