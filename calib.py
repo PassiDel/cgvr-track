@@ -36,8 +36,8 @@ stereo_calib_files = listdir('stereo_2')
 
 
 def main():
-    P12_1, P12_2 = calibrate(1, 0)
-    P13_1, P13_2 = calibrate(1, 2)
+    P12_1, P12_2 = calibrate(2, 0)
+    P13_1, P13_2 = calibrate(2, 1)
 
     # print(p12_1, p12_2, q12)
     # print(p13_1, p13_2)
@@ -45,16 +45,16 @@ def main():
     with open(f'stereo_2/{stereo_calib_files[0]}', 'r') as f:
         data = ast.literal_eval(f.read())
         for i in range(len(data[0])):
-            cord12 = triangulate(P12_1, P12_2, np.array(data[1][i]).T, np.array(data[0][i]).T)
-            cord13 = triangulate(P13_1, P13_2, np.array(data[1][i]).T, np.array(data[2][i]).T)
+            cord12 = triangulate(P12_1, P12_2, np.array(data[2][i]).T, np.array(data[0][i]).T)
+            cord13 = triangulate(P13_1, P13_2, np.array(data[2][i]).T, np.array(data[1][i]).T)
             dist = np.sqrt(np.sum((np.array(cord13) - np.array(cord12)) ** 2))
             print(dist, cord12, cord13)
 
         coords = np.array(
-            [np.array(triangulate(P12_1, P12_2, np.array(data[1][i]).T, np.array(data[0][i]))) for i in
+            [np.array(triangulate(P12_1, P12_2, np.array(data[2][i]).T, np.array(data[0][i]))) for i in
              range(len(data[0]))])
         coords2 = np.array(
-            [np.array(triangulate(P13_1, P13_2, np.array(data[1][i]).T, np.array(data[2][i]))) for i in
+            [np.array(triangulate(P13_1, P13_2, np.array(data[2][i]).T, np.array(data[1][i]))) for i in
              range(len(data[0]))])
 
         print(coords)

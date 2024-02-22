@@ -9,8 +9,8 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-P23_1, P23_2 = calibrate(1, 2)
-P21_1, P21_2 = calibrate(1, 0)
+P23_1, P23_2 = calibrate(2, 0)
+P21_1, P21_2 = calibrate(2, 1)
 
 amount = 3
 cache: list[list[tuple[float, float]]] = []
@@ -54,28 +54,22 @@ def callback(id: int, data: list[tuple[float, float]]):
     cord21 = None
     cord23 = None
     if len(cache[0]) > 0 and len(cache[1]) > 0:
-        cord21 = triangulate(P21_1, P21_2, np.array(cache[1][-1]).T, np.array(cache[0][-1]).T) - np.array([0, 0, 46])
+        cord21 = triangulate(P21_1, P21_2, np.array(cache[2][-1]).T, np.array(cache[0][-1]).T) - np.array([0, 0, 24])
         cache[0] = []
     if len(cache[2]) > 0 and len(cache[1]) > 0:
-        cord23 = triangulate(P23_1, P23_2, np.array(cache[1][-1]).T, np.array(cache[2][-1]).T) - np.array([0, 0, 46])
-        cache[2] = []
+        cord23 = triangulate(P23_1, P23_2, np.array(cache[2][-1]).T, np.array(cache[1][-1]).T) - np.array([0, 0, 24])
+        cache[1] = []
 
     if cord23 is not None and cord21 is not None:
         cord = (cord21 + cord23) / 2
         messages.append(cord)
-        cache[1] = []
-        print(cord)
-    elif cord23 is not None:
-        cord = cord23
-        messages.append(cord)
-        cache[1] = []
+        cache = [[] for _ in range(amount)]
         print(cord)
     elif cord21 is not None:
         cord = cord21
         messages.append(cord)
-        cache[1] = []
+        cache[2] = []
         print(cord)
-        messages.append(cord)
 
 
 main()
