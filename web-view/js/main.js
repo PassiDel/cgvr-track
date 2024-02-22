@@ -104,6 +104,7 @@ function onWindowResize() {
 
 function setControls() {
     controls = new OrbitControls(camera, renderer.domElement);
+    controls.listenToKeyEvents( window );
     controls.minDistance = 1;
     controls.maxDistance = 20;
     return controls;

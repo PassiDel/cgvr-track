@@ -8,17 +8,12 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
-calib_files = [
-    ['weiss_raum_new', 'weiss_raum_hoeher'],
-    ['schwarz_new', 'schwarz_hoeher'],
-    ['weiss_fenster_new', 'weiss_femster_hoeher']
-]
 
-P1, P2 = calibrate(0, 2)
+P23_1, P23_2 = calibrate(1, 2)
+P21_1, P21_2 = calibrate(1, 0)
 
-amount = 2
+amount = 3
 cache: list[list[tuple[float, float]]] = []
-count = 0
 
 messages = []
 
@@ -51,16 +46,36 @@ def main():
 
 
 def callback(id: int, data: list[tuple[float, float]]):
-    global cache, count
-    count += 1
+    global cache
     if len(data) < 1:
         return
     cache[id].append(data[0])
-    if len(cache[0 if id == 1 else 1]) > 0:
-        cord = triangulate(P1, P2, np.array(cache[0][-1]).T, np.array(cache[1][-1]).T) - np.array([0, 0, 46])
+
+    cord21 = None
+    cord23 = None
+    if len(cache[0]) > 0 and len(cache[1]) > 0:
+        cord21 = triangulate(P21_1, P21_2, np.array(cache[1][-1]).T, np.array(cache[0][-1]).T) - np.array([0, 0, 46])
+        cache[0] = []
+    if len(cache[0]) > 0 and len(cache[2]) > 0:
+        cord23 = triangulate(P23_1, P23_2, np.array(cache[1][-1]).T, np.array(cache[2][-1]).T) - np.array([0, 0, 46])
+        cache[2] = []
+
+    if cord23 is not None and cord21 is not None:
+        cord = (cord21 + cord23) / 2
+        messages.append(cord)
+        cache[1] = []
+        print(cord)
+    elif cord23 is not None:
+        cord = cord23
+        messages.append(cord)
+        cache[1] = []
+        print(cord)
+    elif cord21 is not None:
+        cord = cord21
+        messages.append(cord)
+        cache[1] = []
         print(cord)
         messages.append(cord)
-        cache = [[] for _ in range(amount)]
-        count = 0
+
 
 main()
