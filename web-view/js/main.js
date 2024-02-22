@@ -65,12 +65,17 @@ function init() {
 
 
     const evtSource = new EventSource('http://127.0.0.1:5000/stream');
+    let lastPos = {x: 0, y: 0, z: 0}
     evtSource.addEventListener('data', e => {
         const [x, z, y] = JSON.parse(e.data)
         if (car && car.position) {
-            car.position.z = z;
-            car.position.y = 0;
-            car.position.x = -x;
+            car.position.z = lastPos.z;
+            car.position.y = lastPos.y;
+            car.position.x = lastPos.x;
+
+            car.lookAt(-x, 0, z)
+
+            lastPos = {z, x: -x, y: 0}
 
             console.log(camera.position)
             // controls.target.z = z-60;
@@ -203,7 +208,7 @@ function generateDrivingArea(textureLoader) {
     const floorGeometry = new THREE.PlaneGeometry(20, 20);
     const floorMesh = new THREE.Mesh(floorGeometry, drivingMat);
     floorMesh.position.x = 10;
-    floorMesh.position.y = 0.0001;
+    floorMesh.position.y = 0.01;
     floorMesh.receiveShadow = true;
     floorMesh.rotation.x = -Math.PI / 2.0;
     return floorMesh;
