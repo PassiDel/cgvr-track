@@ -56,7 +56,7 @@ def callback(id: int, data: list[tuple[float, float]]):
     if len(cache[0]) > 0 and len(cache[1]) > 0:
         cord21 = triangulate(P21_1, P21_2, np.array(cache[1][-1]).T, np.array(cache[0][-1]).T) - np.array([0, 0, 46])
         cache[0] = []
-    if len(cache[0]) > 0 and len(cache[2]) > 0:
+    if len(cache[2]) > 0 and len(cache[1]) > 0:
         cord23 = triangulate(P23_1, P23_2, np.array(cache[1][-1]).T, np.array(cache[2][-1]).T) - np.array([0, 0, 46])
         cache[2] = []
 
